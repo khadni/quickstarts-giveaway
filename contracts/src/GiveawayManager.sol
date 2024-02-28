@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/interfaces/automation/AutomationCompatibleInterface.sol";
-import {AutomationRegistryInterface, State, Config} from "@chainlink/contracts/src/v0.8/interfaces/automation/1_2/AutomationRegistryInterface1_2.sol";
-import {VRFV2WrapperConsumerBase} from "@chainlink/contracts/src/v0.8/VRFV2WrapperConsumerBase.sol";
-import {VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
+import {AutomationRegistryInterface, State, Config} from "@chainlink/contracts/src/v0.8/automation/interfaces/v1_2/AutomationRegistryInterface1_2.sol";
+import {VRFV2PlusWrapperConsumerBase} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFV2PlusWrapperConsumerBase.sol";
+import {IVRFCoordinatorV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
+import {IVRFV2PlusWrapper} from "@chainlink/contracts/src/v0.8/vrf/dev/interfaces/IVRFV2PlusWrapper.sol";
+
 import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
-import {ERC677ReceiverInterface} from "@chainlink/contracts/src/v0.8/interfaces/ERC677ReceiverInterface.sol";
-import {VRFV2WrapperInterface} from "@chainlink/contracts/src/v0.8/interfaces/VRFV2WrapperInterface.sol";
+import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
+import {IERC677Receiver} from "contracts/src/interfaces/IERC677Receiver.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {IGiveawayManager} from "@src/interfaces/IGiveawayManager.sol";
@@ -26,9 +27,9 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
  */
 contract GiveawayManager is
     IGiveawayManager,
-    VRFV2WrapperConsumerBase,
+    VRFV2PlusWrapperConsumerBase,
     AutomationCompatibleInterface,
-    ERC677ReceiverInterface,
+    IERC677Receiver,
     Pausable,
     ReentrancyGuard
 {
@@ -39,7 +40,7 @@ contract GiveawayManager is
 
     Counters.Counter public giveawayCounter;
     RequestConfig public requestConfig;
-    VRFV2WrapperInterface public vrfWrapper;
+    IVRFV2PlusWrapper public vrfWrapper;
     AutomationRegistryInterface public immutable i_registry;
     address public immutable registrar;
     address public owner;
@@ -175,7 +176,7 @@ contract GiveawayManager is
         address linkAddress,
         address registrarAddress,
         uint32 automationGas
-    ) VRFV2WrapperConsumerBase(linkAddress, wrapperAddress) {
+    ) VRFV2PlusWrapperConsumerBase(linkAddress, wrapperAddress) {
         require(linkAddress != address(0), "Link Token address cannot be 0x0");
         require(wrapperAddress != address(0), "Wrapper address cannot be 0x0");
         require(
@@ -183,7 +184,7 @@ contract GiveawayManager is
             "Registrar address cannot be 0x0"
         );
         owner = msg.sender;
-        vrfWrapper = VRFV2WrapperInterface(wrapperAddress);
+        vrfWrapper = IVRFV2PlusWrapper(wrapperAddress);
         linkTokenAddress = linkAddress;
         registrar = registrarAddress;
         i_registry = AutomationRegistryInterface(keeperAddress);
@@ -777,10 +778,11 @@ contract GiveawayManager is
         uint256 giveawayId,
         uint256 value
     ) internal returns (uint256 requestId) {
-        requestId = requestRandomness(
+        (requestId /*reqPrice*/, ) = requestRandomness(
             requestConfig.callbackGasLimit,
             requestConfig.requestConfirmations,
-            requestConfig.numWords
+            requestConfig.numWords,
+            ""
         );
         emit GiveawayStaged(giveawayId);
         requestIdToGiveawayIndex[requestId] = giveawayId;
