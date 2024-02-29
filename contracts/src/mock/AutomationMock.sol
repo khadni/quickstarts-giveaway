@@ -3,7 +3,8 @@ pragma solidity <=0.8.17;
 
 contract AutomationMock {
     State public state;
-    Config public config = Config(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, address(0), address(0));
+    Config public config =
+        Config(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, address(0), address(0));
 
     struct Config {
         uint32 paymentPremiumPPB;
@@ -31,15 +32,25 @@ contract AutomationMock {
         state = State(0, 0, 0, 0);
     }
 
-    function getState() external view returns (State memory, Config memory, address[] memory) {
+    function getState()
+        external
+        view
+        returns (State memory, Config memory, address[] memory)
+    {
         return (state, config, new address[](0));
     }
 
-    function onTokenTransfer(address sender, uint256 value, bytes calldata data) external {
+    function onTokenTransfer(
+        address sender,
+        uint256 value,
+        bytes calldata data
+    ) external {
         state = State(1, 0, 0, 0);
     }
 
-    function getUpkeep(uint256 id)
+    function getUpkeep(
+        uint256 id
+    )
         external
         view
         returns (
@@ -54,6 +65,16 @@ contract AutomationMock {
             bool paused
         )
     {
-        return (address(0), 0, new bytes(0), 0, address(0), address(0), 0, 0, false);
+        return (
+            address(0),
+            0,
+            new bytes(0),
+            0,
+            address(0),
+            address(0),
+            0,
+            0,
+            false
+        );
     }
 }

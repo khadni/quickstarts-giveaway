@@ -6,6 +6,7 @@ import {AutomationRegistryInterface, State, Config} from "@chainlink/contracts/s
 import {VRFV2PlusWrapperConsumerBase} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFV2PlusWrapperConsumerBase.sol";
 import {IVRFCoordinatorV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
 import {IVRFV2PlusWrapper} from "@chainlink/contracts/src/v0.8/vrf/dev/interfaces/IVRFV2PlusWrapper.sol";
+import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 
 import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
@@ -782,7 +783,9 @@ contract GiveawayManager is
             requestConfig.callbackGasLimit,
             requestConfig.requestConfirmations,
             requestConfig.numWords,
-            ""
+            VRFV2PlusClient._argsToBytes(
+                VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
+            )
         );
         emit GiveawayStaged(giveawayId);
         requestIdToGiveawayIndex[requestId] = giveawayId;
